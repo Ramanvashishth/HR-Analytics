@@ -1,99 +1,91 @@
-import streamlit as st
+# ============================================
+# HR Analytics Project - Complete Source Code
+# ============================================
+
+# Step 1: Import Libraries
 import pandas as pd
-import plotly.express as px
-import seaborn as sns
 import matplotlib.pyplot as plt
+import seaborn as sns
 
-st.set_page_config(
-    page_title="HR Analytics Dashboard",
-    page_icon="📊",
-    layout="wide"
+# Step 2: Load Dataset
+df = pd.read_excel("Book1.xlsx")
+
+# Step 3: Remove Duplicate Records
+df.drop_duplicates(inplace=True)
+
+# Step 4: Check Missing Values
+print("Missing Values:")
+print(df.isnull().sum())
+
+# ============================================
+# Attrition Analysis
+# ============================================
+
+attrition_rate = df["Attrition"].value_counts(normalize=True) * 100
+
+print("\nAttrition Rate (%):")
+print(attrition_rate)
+
+plt.figure(figsize=(6, 4))
+
+df["Attrition"].value_counts().plot(
+    kind="bar",
+    color=["skyblue", "orange"]
 )
 
-st.title("📊 HR Analytics Dashboard")
+plt.title("Attrition Distribution")
+plt.xlabel("Attrition")
+plt.ylabel("Employee Count")
+plt.show()
 
-# Load Data
-@st.cache_data
-def load_data():
-    return pd.read_excel("Book1.xlsx")
+# ============================================
+# Department-wise Attrition
+# ============================================
 
-df = load_data()
-
-# Sidebar
-st.sidebar.header("Filters")
-
-department = st.sidebar.multiselect(
-    "Department",
-    df["Department"].unique(),
-    default=df["Department"].unique()
+dept_attrition = pd.crosstab(
+    df["Department"],
+    df["Attrition"]
 )
 
-gender = st.sidebar.multiselect(
-    "Gender",
-    df["Gender"].unique(),
-    default=df["Gender"].unique()
+print("\nDepartment-wise Attrition:")
+print(dept_attrition)
+
+dept_attrition.plot(
+    kind="bar",
+    figsize=(8, 5)
 )
 
-filtered_df = df[
-    (df["Department"].isin(department)) &
-    (df["Gender"].isin(gender))
-]
+plt.title("Department-wise Attrition")
+plt.xlabel("Department")
+plt.ylabel("Employee Count")
+plt.show()
 
-# KPIs
-col1, col2, col3, col4 = st.columns(4)
+# ============================================
+# Gender-wise Attrition
+# ============================================
 
-col1.metric("Total Employees", len(filtered_df))
-col2.metric("Average Age", round(filtered_df["Age"].mean(),1))
-col3.metric("Average Monthly Income",
-            f"{filtered_df['Monthly Income'].mean():,.0f}")
+gender_attrition = pd.crosstab(
+    df["Gender"],
+    df["Attrition"]
+)
 
-attrition = filtered_df["Attrition"].value_counts().get("Yes",0)
-col4.metric("Attrition", attrition)
+print("\nGender-wise Attrition:")
+print(gender_attrition)
 
-st.markdown("---")
+gender_attrition.plot(
+    kind="bar",
+    figsize=(6, 4)
+)
 
-# Charts
+plt.title("Gender-wise Attrition")
+plt.xlabel("Gender")
+plt.ylabel("Employee Count")
+plt.show()
 
-c1, c2 = st.columns(2)
+# ============================================
+# Job Role-wise Attrition
+# ============================================
 
-with c1:
-    fig = px.pie(
-        filtered_df,
-        names="Attrition",
-        title="Employee Attrition"
-    )
-    st.plotly_chart(fig, use_container_width=True)
-
-with c2:
-    fig = px.bar(
-        filtered_df.groupby("Department").size().reset_index(name="Employees"),
-        x="Department",
-        y="Employees",
-        title="Employees by Department"
-    )
-    st.plotly_chart(fig, use_container_width=True)
-
-c3, c4 = st.columns(2)
-
-with c3:
-    fig = px.histogram(
-        filtered_df,
-        x="Age",
-        title="Age Distribution"
-    )
-    st.plotly_chart(fig, use_container_width=True)
-
-with c4:
-    fig = px.box(
-        filtered_df,
-        x="Job Role",
-        y="Monthly Income",
-        title="Monthly Income by Job Role"
-    )
-    st.plotly_chart(fig, use_container_width=True)
-
-st.subheader("Employee Details")
-st.dataframe(filtered_df, use_container_width=True)
 job_attrition = pd.crosstab(
     df["Job Role"],
     df["Attrition"]
@@ -106,11 +98,17 @@ job_attrition.plot(
     kind="bar",
     figsize=(12, 6)
 )
+
 plt.title("Job Role-wise Attrition")
 plt.xlabel("Job Role")
 plt.ylabel("Employee Count")
 plt.xticks(rotation=45)
 plt.show()
+
+# ============================================
+# Monthly Income vs Attrition
+# ============================================
+
 plt.figure(figsize=(8, 5))
 
 df.boxplot(
@@ -123,6 +121,27 @@ plt.suptitle("")
 plt.xlabel("Attrition")
 plt.ylabel("Monthly Income")
 plt.show()
+
+# ============================================
+# Age Distribution by Attrition
+# ============================================
+
+plt.figure(figsize=(8, 5))
+
+df.groupby("Attrition")["Age"].hist(
+    alpha=0.6
+)
+
+plt.legend(["No", "Yes"])
+plt.title("Age Distribution by Attrition")
+plt.xlabel("Age")
+plt.ylabel("Frequency")
+plt.show()
+
+# ============================================
+# Overtime vs Attrition
+# ============================================
+
 overtime_attrition = pd.crosstab(
     df["Over Time"],
     df["Attrition"]
@@ -135,7 +154,38 @@ overtime_attrition.plot(
     kind="bar",
     figsize=(6, 4)
 )
+
 plt.title("Overtime Impact on Attrition")
 plt.xlabel("Over Time")
 plt.ylabel("Employee Count")
 plt.show()
+
+# ============================================
+# Correlation Heatmap
+# ============================================
+
+numeric_df = df.select_dtypes(
+    include=["int64", "float64"]
+)
+
+plt.figure(figsize=(15, 10))
+
+sns.heatmap(
+    numeric_df.corr(),
+    cmap="coolwarm",
+    annot=False
+)
+
+plt.title("Correlation Heatmap")
+plt.show()
+
+# ============================================
+# Export Cleaned Dataset
+# ============================================
+
+df.to_csv(
+    "HR_Analytics_Cleaned.csv",
+    index=False
+)
+
+print("\nCSV Exported Successfully!")
